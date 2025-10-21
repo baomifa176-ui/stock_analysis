@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Stock Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0c0e2b 0%, #1a1f4b 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Robot background image */
+        .robot-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://www.me.columbia.edu/files/seas/styles/816x460/public/content/cs_image/2022/28/robot_hero.jpg?itok=TrT_MOb-');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            z-index: 1;
+        }
+        
+        .phone-container {
+            width: 360px;
+            height: 700px;
+            background: rgba(10, 12, 36, 0.95);
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 10px solid #1a1f4b;
+            z-index: 2;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 25px 10px;
+            background: rgba(16, 18, 48, 0.8);
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px 25px;
+            height: calc(100% - 60px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* Steps */
+        .step {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .step.active {
+            display: flex;
+        }
+        
+        /* Step 1: Input */
+        .robot-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0 40px;
+        }
+        
+        .speech-bubble {
+            background: #5d7bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            position: relative;
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 10px solid transparent;
+            border-bottom-color: #5d7bff;
+        }
+        
+        .ai-banner {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid rgba(93, 123, 255, 0.2);
+        }
+        
+        .ai-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #5d7bff, #8a9eff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .ai-subtitle {
+            font-size: 14px;
+            color: #a0a8e6;
+            margin-bottom: 5px;
+        }
+        
+        .ai-highlight {
+            font-size: 16px;
+            font-weight: 600;
+            color: #5d7bff;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(93, 123, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .input-field:focus {
+            border-color: #5d7bff;
+            box-shadow: 0 0 10px rgba(93, 123, 255, 0.5);
+        }
+        
+        .analyze-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #5d7bff, #3a56cc);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(93, 123, 255, 0.4);
+        }
+        
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(93, 123, 255, 0.6);
+        }
+        
+        /* Step 2: Analyzing */
+        .loading-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        
+        .loading-text {
+            font-size: 20px;
+            font-weight: 600;
+            color: #5d7bff;
+            margin-bottom: 30px;
+        }
+        
+        .analysis-steps {
+            width: 100%;
+        }
+        
+        .step-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            text-align: left;
+            border-left: 4px solid #5d7bff;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        
+        .step-item.active {
+            opacity: 1;
+            transform: translateX(0);
+            transition: all 0.5s ease;
+        }
+        
+        /* Step 3: Results */
+        .result-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        
+        .result-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #5d7bff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .result-description {
+            font-size: 14px;
+            color: #a0a8e6;
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .whatsapp-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #25D366, #128C7E);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
+        }
+        
+        .whatsapp-btn:hover {
+            background: linear-gradient(90deg, #128C7E, #25D366);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.6);
+        }
+        
+        .step-indicator {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #a0a8e6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Robot background -->
+    <div class="robot-bg"></div>
+    
+    <!-- Phone container -->
+    <div class="phone-container">
+        <!-- Status bar -->
+        <div class="status-bar">
+            <div class="time">04:01</div>
+            <div class="battery">
+                <div class="battery-level">90%</div>
+                <div class="battery-icon">
+                    <div class="battery-fill"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Step 1: Input -->
+            <div id="step1" class="step active">
+                <div>
+                    <div class="robot-container">
+                        <div class="speech-bubble">Hello! Let's analyze stocks!</div>
+                    </div>
+                    
+                    <div class="ai-banner">
+                        <div class="ai-title">AI Stock Analysis & Forecast</div>
+                        <div class="ai-subtitle">Artificial Intelligence & Big Data</div>
+                        <div class="ai-highlight">Know whether to buy or sell in 0.5 seconds</div>
+                    </div>
+                </div>
+                
+                <div class="input-section">
+                    <input type="text" class="input-field" id="stockCode" placeholder="Enter company name or stock code">
+                    <button class="analyze-btn" id="startAnalysis">Start Analysis</button>
+                    <div class="step-indicator">Step 1/3</div>
+                </div>
+            </div>
+            
+            <!-- Step 2: Analyzing -->
+            <div id="step2" class="step">
+                <div class="loading-section">
+                    <div class="loading-text">Analyzing...</div>
+                    
+                    <div class="analysis-steps">
+                        <div class="step-item" id="step1-analysis">
+                            <div class="step-number">STEP 1</div>
+                            <div class="step-description">Fetching market data...</div>
+                        </div>
+                        <div class="step-item" id="step2-analysis">
+                            <div class="step-number">STEP 2</div>
+                            <div class="step-description">AI analyzing patterns...</div>
+                        </div>
+                        <div class="step-item" id="step3-analysis">
+                            <div class="step-number">STEP 3</div>
+                            <div class="step-description">Generating report...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="step-indicator">Step 2/3</div>
+            </div>
+            
+            <!-- Step 3: Results -->
+            <div id="step3" class="step">
+                <div class="result-section">
+                    <h2 class="result-title" id="resultTitle">Analysis Report Completed</h2>
+                    <p class="result-description">
+                        Add our business assistant to receive detailed analysis reports for the corresponding stock. 
+                        Also get today's AI-recommended premium stocks.
+                    </p>
+                    
+                    <a href="https://wa.me/message/DHC3MINNCU4UB1" class="whatsapp-btn" target="_blank">Get Report via WhatsApp</a>
+                </div>
+                <div class="step-indicator">Step 3/3</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Step navigation
+        document.getElementById('startAnalysis').addEventListener('click', function() {
+            const stockCode = document.getElementById('stockCode').value;
+            
+            if (!stockCode.trim()) {
+                // Add shake animation
+                document.getElementById('stockCode').style.animation = 'shake 0.5s';
+                document.getElementById('stockCode').focus();
+                setTimeout(() => {
+                    document.getElementById('stockCode').style.animation = '';
+                }, 500);
+                return;
+            }
+            
+            // Switch to step 2
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            
+            // Simulate analysis steps
+            setTimeout(() => {
+                document.getElementById('step1-analysis').classList.add('active');
+            }, 500);
+            
+            setTimeout(() => {
+                document.getElementById('step2-analysis').classList.add('active');
+            }, 1500);
+            
+            setTimeout(() => {
+                document.getElementById('step3-analysis').classList.add('active');
+            }, 2500);
+            
+            // Switch to results after 3.5 seconds
+            setTimeout(() => {
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step3').classList.add('active');
+                
+                // Update title with entered code
+                document.getElementById('resultTitle').textContent = 
+                    `${stockCode.toUpperCase()} Analysis Report`;
+            }, 3500);
+        });
+        
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
